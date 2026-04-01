@@ -2,7 +2,10 @@ import { z } from 'zod';
 
 // Password Validation Schema
 export const passwordSchema = z
-  .string()
+  .string({
+    error: issue =>
+      issue.input === undefined ? 'Password is required' : undefined,
+  })
   .min(6, 'Password must be at least 6 characters long')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
@@ -19,16 +22,27 @@ export const signupSchema = z.object({
     .min(3, 'Username must be at least 3 characters')
     .max(30, 'Username must not exceed 30 characters'),
 
-  email: z.email('Invalid email format'),
+  email: z.email({
+    error: issue =>
+      issue.input === undefined ? 'Email is required' : undefined,
+  }),
 
   password: passwordSchema,
 });
 
 // Login Schema
 export const loginSchema = z.object({
-  email: z.email('Invalid email format'),
+  email: z.email({
+    error: issue =>
+      issue.input === undefined ? 'Email is required' : undefined,
+  }),
 
-  password: z.string().min(6, 'Invalid Credentials'),
+  password: z
+    .string({
+      error: issue =>
+        issue.input === undefined ? 'Password is required' : undefined,
+    })
+    .min(6, 'Invalid Credentials'),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;
