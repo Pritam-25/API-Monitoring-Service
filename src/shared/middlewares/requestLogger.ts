@@ -10,16 +10,17 @@ const requestLoggerMiddleware = (
 
   res.on('finish', () => {
     const duration = Date.now() - start;
+    const sanitizedPath = req.baseUrl + req.path;
     const logMeta = {
       method: req.method,
-      path: req.originalUrl,
+      path: sanitizedPath,
       ip: req.ip,
       userAgent: req.headers['user-agent'],
       requestId: req.requestId,
       statusCode: res.statusCode,
       durationMs: duration,
     };
-    const message = `${req.method} ${req.originalUrl}`;
+    const message = `${req.method} ${sanitizedPath}`;
 
     if (res.statusCode >= 500) {
       logger.error(logMeta, message);

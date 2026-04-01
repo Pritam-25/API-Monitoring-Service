@@ -22,7 +22,10 @@
       "@constants/*": ["src/shared/constants/*"],
       "@events/*": ["src/shared/events/*"],
 
-      "@modules/*": ["src/modules/*"]
+      "@modules/*": ["src/modules/*"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@client/*": ["src/modules/client/*"],
+      "@ingest/*": ["src/modules/ingest/*"]
     },
 
     "strict": true,

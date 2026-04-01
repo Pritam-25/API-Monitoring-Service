@@ -11,6 +11,7 @@ import { Server } from 'http';
 
 let shuttingDown = false;
 let forcedExitTimer: ReturnType<typeof setTimeout> | null = null;
+let shutdownExitCode = 0;
 
 /**
  * Initialize all connections
@@ -46,7 +47,16 @@ async function startServer(): Promise<void> {
     /**
      * Graceful Shutdown
      */
-    const gracefulShutdown = async (signal: string) => {
+    const clearForcedExitTimer = () => {
+      if (forcedExitTimer) {
+        clearTimeout(forcedExitTimer);
+        forcedExitTimer = null;
+      }
+    };
+
+    const gracefulShutdown = async (signal: string, exitCode = 0) => {
+      shutdownExitCode = Math.max(shutdownExitCode, exitCode);
+
       if (shuttingDown) {
         return;
       }
@@ -67,35 +77,33 @@ async function startServer(): Promise<void> {
           await postgres.close();
           // await rabbitmq.close();
 
-          if (forcedExitTimer) {
-            clearTimeout(forcedExitTimer);
-            forcedExitTimer = null;
-          }
+          clearForcedExitTimer();
 
           logger.info('All connections closed');
-          process.exit(0);
+          process.exit(shutdownExitCode);
         } catch (error) {
           logger.error({ err: error }, 'Shutdown error:');
-          process.exit(1);
+          clearForcedExitTimer();
+          process.exit(Math.max(shutdownExitCode, 1));
         }
       });
     };
 
-    process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-    process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+    process.on('SIGINT', () => gracefulShutdown('SIGINT', 0));
+    process.on('SIGTERM', () => gracefulShutdown('SIGTERM', 0));
 
     process.on('uncaughtException', (error: Error) => {
       logger.error(
         { err: error },
         'uncaughtException received, shutting down...'
       );
-      gracefulShutdown('uncaughtException');
+      gracefulShutdown('uncaughtException', 1);
     });
 
     process.on('unhandledRejection', (reason: unknown) => {
       const err = reason instanceof Error ? reason : new Error(String(reason));
       logger.error({ err }, 'unhandledRejection received, shutting down...');
-      gracefulShutdown('unhandledRejection');
+      gracefulShutdown('unhandledRejection', 1);
     });
   } catch (error) {
     logger.error({ err: error }, 'Failed to start server:');

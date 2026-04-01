@@ -1,3 +1,5 @@
+import { ERROR_CODES } from './errorCodes.js';
+
 export const resolvePublicErrorCode = (error: unknown): string | undefined => {
   if (error === undefined || error === null) {
     return undefined;
@@ -21,5 +23,5 @@ export const resolvePublicErrorCode = (error: unknown): string | undefined => {
     }
   }
 
-  return 'INTERNAL_ERROR';
+  return ERROR_CODES.INTERNAL_ERROR;
 };

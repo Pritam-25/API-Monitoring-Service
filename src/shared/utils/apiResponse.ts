@@ -1,4 +1,3 @@
-import { env } from '@config/env.js';
 import getRequestId from './getRequestId.js';
 import { resolvePublicErrorCode } from './resolvePublicError.js';
 
@@ -12,11 +11,17 @@ export const successResponse = <T>(message: string, data?: T) => ({
   },
 });
 
-export const errorResponse = <T>(message: string, error?: T) => ({
+export const errorResponse = <T>(
+  message: string,
+  errorCode?: string,
+  error?: T
+) => ({
   success: false as const,
   message,
-  ...(error !== undefined && { errorCode: resolvePublicErrorCode(error) }),
-  ...(env.NODE_ENV === 'development' && error !== undefined && { error }),
+  ...(errorCode !== undefined && {
+    errorCode: resolvePublicErrorCode(errorCode),
+  }),
+  ...(error !== undefined && { error }),
   meta: {
     timestamp: new Date().toISOString(),
     requestId: getRequestId(),

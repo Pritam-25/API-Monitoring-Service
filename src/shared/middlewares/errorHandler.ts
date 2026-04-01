@@ -16,12 +16,14 @@ export const errorHandler = (
     err.statusCode ||
     statusCode.internalError;
 
+  const sanitizedPath = req.baseUrl + req.path;
+
   logger.error(
     {
       err,
       requestId: req.requestId,
       statusCode: status,
-      path: req.path,
+      path: sanitizedPath,
       method: req.method,
     },
     'Error occurred'
@@ -30,10 +32,10 @@ export const errorHandler = (
   if (err instanceof ApiError) {
     return res
       .status(err.statusCode)
-      .json(errorResponse(err.errorCode, err.name));
+      .json(errorResponse(err.name, err.errorCode));
   }
 
   return res
     .status(status)
-    .json(errorResponse(ERROR_CODES.INTERNAL_ERROR, err.name));
+    .json(errorResponse(err.name, ERROR_CODES.INTERNAL_ERROR));
 };

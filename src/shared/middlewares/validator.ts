@@ -11,7 +11,7 @@ export const validateSchema =
       res
         .status(statusCode.badRequest)
         .json(
-          errorResponse(ERROR_CODES.REQUIRE_REQUEST_BODY, 'No body provided')
+          errorResponse('No body provided', ERROR_CODES.REQUIRE_REQUEST_BODY)
         );
       return;
     }
@@ -20,6 +20,7 @@ export const validateSchema =
 
     if (!result.success) {
       const errors: Record<string, string> = {};
+      const sanitizedPath = req.baseUrl + req.path;
 
       result.error.issues.forEach(issue => {
         const field = issue.path.join('.');
@@ -28,18 +29,23 @@ export const validateSchema =
         }
       });
 
-      logger.error('Error occurred:', {
-        message: 'Validation failed',
-        statusCode: statusCode.badRequest,
-        stack: undefined,
-        path: req.path,
-        method: req.method,
-        errors,
-      });
+      logger.error(
+        {
+          message: 'Validation Failed',
+          statusCode: statusCode.badRequest,
+          requestId: req.requestId,
+          path: sanitizedPath,
+          method: req.method,
+          errors,
+        },
+        'Error occurred'
+      );
 
       return res
         .status(statusCode.badRequest)
-        .json(errorResponse(ERROR_CODES.INVALID_INPUT, errors));
+        .json(
+          errorResponse('Validation Failed', ERROR_CODES.INVALID_INPUT, errors)
+        );
     }
 
     // overwrite with validated data
