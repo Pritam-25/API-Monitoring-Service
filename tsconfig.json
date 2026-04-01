@@ -7,19 +7,25 @@
     "moduleResolution": "NodeNext",
     "target": "ESNext",
     "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
 
     "baseUrl": ".",
 
     "paths": {
-      "@controllers/*": ["src/controllers/*"],
-      "@generated/*": ["src/generated/*"],
       "@config/*": ["src/config/*"],
-      "@middleware/*": ["src/middleware/*"],
-      "@repositories/*": ["src/repositories/*"],
-      "@routes/*": ["src/routes/*"],
-      "@schemas/*": ["src/schemas/*"],
-      "@services/*": ["src/services/*"],
-      "@utils/*": ["src/utils/*"]
+      "@database/*": ["src/config/database/*"],
+      "@messaging/*": ["src/config/messaging/*"],
+
+      "@shared/*": ["src/shared/*"],
+      "@utils/*": ["src/shared/utils/*"],
+      "@middlewares/*": ["src/shared/middlewares/*"],
+      "@constants/*": ["src/shared/constants/*"],
+      "@events/*": ["src/shared/events/*"],
+
+      "@modules/*": ["src/modules/*"],
+      "@auth/*": ["src/modules/auth/*"],
+      "@client/*": ["src/modules/client/*"],
+      "@ingest/*": ["src/modules/ingest/*"]
     },
 
     "strict": true,

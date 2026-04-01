@@ -78,5 +78,3 @@ Add test and lint scripts as needed. If you have tests, run them with `pnpm test
 ## License
 
 This project is provided as-is. Add your license file or notice here.
-
-

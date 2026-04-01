@@ -6,3 +6,10 @@ build
 !.env.example
 /src/generated/prisma
 .vscode
+
+# logs
+logs/
+*.log
+
+.vscode
+.idea
