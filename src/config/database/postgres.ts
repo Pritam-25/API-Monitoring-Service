@@ -13,7 +13,7 @@ class PostgresConnection {
       });
 
       this.pool.on('error', (err: Error): void => {
-        logger.error('Unexpected error on Neon client', err);
+        logger.error({ err }, 'Unexpected error on Neon client');
       });
 
       logger.info('Neon Pool Created');
@@ -28,12 +28,12 @@ class PostgresConnection {
       const result = await pool.query('SELECT NOW()');
       logger.info(`Neon connected at ${result.rows[0].now}`);
     } catch (error) {
-      logger.error('Failed to connect to Neon', error);
+      logger.error({ err: error }, 'Failed to connect to Neon');
       throw error;
     }
   }
 
-  async query<T = any>(text: string, params?: any[]): Promise<T> {
+  async query<T = any>(text: string, params?: any[]): Promise<T[]> {
     const pool = this.getPool();
     const start = Date.now();
 
@@ -41,18 +41,25 @@ class PostgresConnection {
       const result = await pool.query(text, params);
       const duration = Date.now() - start;
 
-      logger.debug('Executed query', {
-        text,
-        duration,
-        rows: result.rowCount,
-      });
+      logger.debug(
+        {
+          text,
+          duration,
+          rows: result.rowCount,
+        },
+        'Executed query'
+      );
 
-      return result as T;
+      return result.rows as T[];
     } catch (error: any) {
-      logger.error('Query error:', {
-        text,
-        error: error.message,
-      });
+      logger.error(
+        {
+          err: error,
+          text,
+          error: error.message,
+        },
+        'Query error:'
+      );
       throw error;
     }
   }

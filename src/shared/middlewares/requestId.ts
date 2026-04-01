@@ -7,11 +7,17 @@ const requestIdMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  const incoming = (req.headers['x-request-id'] as string) || undefined;
-  const requestId = incoming || randomUUID();
+  const incoming = req.headers['x-request-id'];
+  const normalizedIncoming = Array.isArray(incoming)
+    ? (incoming[0] ?? '')
+    : incoming !== undefined
+      ? String(incoming)
+      : '';
+  const trimmedIncoming = normalizedIncoming.trim();
+  const requestId = trimmedIncoming || randomUUID();
 
   asyncLocalStorage.run({ requestId }, () => {
-    (req as any).id = requestId;
+    req.requestId = requestId;
     res.setHeader('X-Request-Id', requestId);
     next();
   });

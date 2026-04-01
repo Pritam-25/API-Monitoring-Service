@@ -1,13 +1,12 @@
-import express, { Application, Request, Response, NextFunction } from 'express';
+import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 
-import logger from '@config/logger.js';
 import { successResponse, errorResponse } from '@shared/utils/apiResponse.js';
-import { errorHandler } from '@shared/middleware/errorHandler.js';
-import requestIdMiddleware from '@shared/middleware/requestId.js';
-import getRequestId from '@shared/utils/getRequestId.js';
+import { errorHandler } from '@shared/middlewares/errorHandler.js';
+import requestIdMiddleware from '@shared/middlewares/requestId.js';
+import requestLoggerMiddleware from '@shared/middlewares/requestLogger.js';
 
 // Routers
 import authRouter from '@modules/auth/routes/auth.routes.js';
@@ -38,14 +37,7 @@ app.use(requestIdMiddleware);
 /**
  * Request Logger
  */
-app.use((req: Request, _res: Response, next: NextFunction) => {
-  logger.info(`${req.method} ${req.path}`, {
-    ip: req.ip,
-    userAgent: req.headers['user-agent'],
-    requestId: getRequestId(),
-  });
-  next();
-});
+app.use(requestLoggerMiddleware);
 
 /**
  * Health Check

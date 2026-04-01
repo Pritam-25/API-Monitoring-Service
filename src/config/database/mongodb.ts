@@ -21,12 +21,12 @@ class MongoConnection {
       logger.info(`MongoDB connected successfully.`);
 
       this.connection.on('error', err => {
-        logger.error('MongoDB connection error', err);
+        logger.error({ err }, 'MongoDB connection error');
       });
 
       return this.connection;
     } catch (error) {
-      logger.error('Failed to connect to MongoDB:', error);
+      logger.error({ err: error }, 'Failed to connect to MongoDB:');
       throw error;
     }
   }
@@ -39,7 +39,7 @@ class MongoConnection {
         logger.info('MongoDB disconnected!');
       }
     } catch (error) {
-      logger.error('Failed to disconnect MongoDB:', error);
+      logger.error({ err: error }, 'Failed to disconnect MongoDB:');
       throw error;
     }
   }

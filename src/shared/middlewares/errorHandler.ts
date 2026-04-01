@@ -16,14 +16,16 @@ export const errorHandler = (
     err.statusCode ||
     statusCode.internalError;
 
-  // Log the error with structured metadata
-  logger.error('Error occurred:', {
-    message: err.message,
-    statusCode: status,
-    stack: (err as any).stack,
-    path: req.path,
-    method: req.method,
-  });
+  logger.error(
+    {
+      err,
+      requestId: req.requestId,
+      statusCode: status,
+      path: req.path,
+      method: req.method,
+    },
+    'Error occurred'
+  );
 
   if (err instanceof ApiError) {
     return res
@@ -32,6 +34,6 @@ export const errorHandler = (
   }
 
   return res
-    .status(statusCode.internalError)
+    .status(status)
     .json(errorResponse(ERROR_CODES.INTERNAL_ERROR, err.name));
 };

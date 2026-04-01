@@ -26,7 +26,7 @@ export const env = createEnv({
     RABBITMQ_RETRY_DELAY: z.string().transform(Number).default(1000),
 
     // JWT
-    JWT_SECRET: z.string().min(10).default('CHANGE_THIS_SECRET'),
+    JWT_SECRET: z.string().min(32),
     JWT_EXPIRES_IN: z.string().default('24h'),
 
     // Rate Limit

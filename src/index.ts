@@ -9,6 +9,9 @@ import postgres from '@config/database/postgres.js';
 
 import { Server } from 'http';
 
+let shuttingDown = false;
+let forcedExitTimer: ReturnType<typeof setTimeout> | null = null;
+
 /**
  * Initialize all connections
  */
@@ -22,7 +25,7 @@ async function initializeConnection(): Promise<void> {
 
     logger.info('All connections established successfully');
   } catch (error) {
-    logger.error('Failed to initialize connections:', error);
+    logger.error({ err: error }, 'Failed to initialize connections:');
     throw error;
   }
 }
@@ -44,7 +47,17 @@ async function startServer(): Promise<void> {
      * Graceful Shutdown
      */
     const gracefulShutdown = async (signal: string) => {
+      if (shuttingDown) {
+        return;
+      }
+
+      shuttingDown = true;
       logger.info(`${signal} received, shutting down...`);
+
+      forcedExitTimer = setTimeout(() => {
+        logger.error('Forced shutdown');
+        process.exit(1);
+      }, 10000);
 
       server.close(async () => {
         logger.info('HTTP server closed');
@@ -54,18 +67,18 @@ async function startServer(): Promise<void> {
           await postgres.close();
           // await rabbitmq.close();
 
+          if (forcedExitTimer) {
+            clearTimeout(forcedExitTimer);
+            forcedExitTimer = null;
+          }
+
           logger.info('All connections closed');
           process.exit(0);
         } catch (error) {
-          logger.error('Shutdown error:', error);
+          logger.error({ err: error }, 'Shutdown error:');
           process.exit(1);
         }
       });
-
-      setTimeout(() => {
-        logger.error('Forced shutdown');
-        process.exit(1);
-      }, 10000);
     };
 
     process.on('SIGINT', () => gracefulShutdown('SIGINT'));
@@ -85,7 +98,7 @@ async function startServer(): Promise<void> {
       gracefulShutdown('unhandledRejection');
     });
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error({ err: error }, 'Failed to start server:');
     process.exit(1);
   }
 }
