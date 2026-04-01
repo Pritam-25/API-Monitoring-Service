@@ -5,7 +5,7 @@ import logger from '@config/logger.js';
 
 import mongodb from '@config/database/mongodb.js';
 import postgres from '@config/database/postgres.js';
-// import rabbitmq from '@config/messaging/rabbitmq.js';
+import rabbitmq from '@config/messaging/rabbitmq.js';
 
 import { Server } from 'http';
 
@@ -22,7 +22,7 @@ async function initializeConnection(): Promise<void> {
 
     await mongodb.connect();
     await postgres.testConnection();
-    // await rabbitmq.connect();
+    await rabbitmq.connect();
 
     logger.info('All connections established successfully');
   } catch (error) {
@@ -75,7 +75,7 @@ async function startServer(): Promise<void> {
         try {
           await mongodb.disconnect();
           await postgres.close();
-          // await rabbitmq.close();
+          await rabbitmq.close();
 
           clearForcedExitTimer();
 
