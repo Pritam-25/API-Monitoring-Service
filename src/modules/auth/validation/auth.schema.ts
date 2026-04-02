@@ -66,7 +66,7 @@ const permissionsSchema = z
   })
   .default(getDefaultPermissionsForRole(APPLICATION_ROLES.CLIENT_VIEWER));
 
-const userBaseSchema = z.object({
+export const baseUserSchema = z.object({
   username: z
     .string({
       error: issue =>
@@ -102,12 +102,12 @@ const validateClientIdForRole = (data: {
   clientId?: string | undefined;
 }) => data.role === APPLICATION_ROLES.SUPER_ADMIN || Boolean(data.clientId);
 
-export const userSchema = userBaseSchema.refine(validateClientIdForRole, {
+export const userSchema = baseUserSchema.refine(validateClientIdForRole, {
   message: 'clientId is required unless role is super_admin',
   path: ['clientId'],
 });
 
-export const registerSchema = userBaseSchema
+export const registerSchema = baseUserSchema
   .pick({
     username: true,
     email: true,
@@ -122,7 +122,7 @@ export const registerSchema = userBaseSchema
     path: ['clientId'],
   });
 
-export const loginSchema = userBaseSchema.pick({
+export const loginSchema = baseUserSchema.pick({
   email: true,
   password: true,
 });

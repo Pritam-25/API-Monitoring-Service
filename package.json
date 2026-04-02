@@ -19,7 +19,8 @@
     "build": "tsc && tsc-alias",
     "type-check": "tsc --noEmit",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "lint": "type-check"
   },
   "keywords": [],
   "author": "",
