@@ -23,12 +23,6 @@ interface AuthService {
   getProfile(userId: string): Promise<AuthUser>;
 }
 
-type AuthenticatedRequest = Request & {
-  user?: {
-    userId?: string;
-  };
-};
-
 /**
  * Handles auth operations and delegates business logic to AuthService.
  */
@@ -128,7 +122,7 @@ export class AuthController {
   };
 
   getProfile = async (
-    req: AuthenticatedRequest,
+    req: Request,
     res: Response,
     next: NextFunction
   ): Promise<void> => {
@@ -155,7 +149,10 @@ export class AuthController {
     next: NextFunction
   ): Promise<void> => {
     try {
-      res.clearCookie('authToken');
+      res.clearCookie('authToken', {
+        httpOnly: config.cookie.httpOnly,
+        secure: config.cookie.secure,
+      });
       res
         .status(statusCode.success)
         .json(successResponse('Logout successful', {}));
