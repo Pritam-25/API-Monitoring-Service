@@ -7,7 +7,10 @@ import type {
   LoginInput,
   RegisterInput,
 } from '@auth/validation/auth.schema.js';
-import { APPLICATION_ROLES } from '@auth/validation/auth.schema.js';
+import {
+  APPLICATION_ROLES,
+  getDefaultPermissionsForRole,
+} from '@auth/validation/auth.schema.js';
 import { ApiError } from '@shared/utils/apiError.js';
 import { statusCode } from '@shared/utils/statusCodes.js';
 
@@ -33,6 +36,7 @@ interface UserRepository {
   findByEmail(email: string): Promise<UserRecord | null>;
   findById(userId: string): Promise<UserRecord | null>;
   create(payload: RegisterInput): Promise<UserRecord>;
+  createInitialSuperAdmin(payload: RegisterInput): Promise<UserRecord | null>;
 }
 
 type AuthResult = {
@@ -86,16 +90,19 @@ export class AuthService {
 
   async onboardSuperAdmin(superAdminData: RegisterInput): Promise<AuthResult> {
     try {
-      const existingUsers = await this.userRepository.findAll();
+      const user = await this.userRepository.createInitialSuperAdmin({
+        ...superAdminData,
+        role: APPLICATION_ROLES.SUPER_ADMIN,
+        clientId: undefined,
+      });
 
-      if (existingUsers.length > 0) {
+      if (!user) {
         throw new ApiError(
           statusCode.forbidden,
           'SUPER_ADMIN_ONBOARDING_DISABLED'
         );
       }
 
-      const user = await this.userRepository.create(superAdminData);
       const token = this.generateToken(user);
 
       logger.info({ username: user.username }, 'Admin onboarded successfully');
@@ -128,7 +135,18 @@ export class AuthService {
         throw new ApiError(statusCode.conflict, 'EMAIL_ALREADY_EXISTS');
       }
 
-      const user = await this.userRepository.create(userData);
+      const sanitizedUserData: RegisterInput = {
+        username: userData.username,
+        email: userData.email,
+        password: userData.password,
+        role: APPLICATION_ROLES.CLIENT_VIEWER,
+        isActive: true,
+        permissions: getDefaultPermissionsForRole(
+          APPLICATION_ROLES.CLIENT_VIEWER
+        ),
+      };
+
+      const user = await this.userRepository.create(sanitizedUserData);
       const token = this.generateToken(user);
 
       logger.info({ username: user.username }, 'User registered successfully');

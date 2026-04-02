@@ -13,6 +13,74 @@ class MongoUserRepository extends BaseRepository<IUser, RegisterInput> {
     super(User);
   }
 
+  async createInitialSuperAdmin(
+    userData: RegisterInput
+  ): Promise<UserDocument | null> {
+    const session = await this.model.db.startSession();
+
+    try {
+      let createdUser: UserDocument | null = null;
+
+      await session.withTransaction(async () => {
+        const totalUsers = await this.model.countDocuments({}, { session });
+        if (totalUsers > 0) {
+          return;
+        }
+
+        const bootstrapLockCollection = this.model.db.collection<{
+          _id: string;
+          claimed: boolean;
+          createdAt: Date;
+        }>('bootstrap_locks');
+
+        const lockResult = await bootstrapLockCollection.findOneAndUpdate(
+          { _id: 'super_admin_bootstrap', claimed: { $ne: true } },
+          {
+            $setOnInsert: {
+              _id: 'super_admin_bootstrap',
+              claimed: true,
+              createdAt: new Date(),
+            },
+          },
+          {
+            upsert: true,
+            returnDocument: 'before',
+            session,
+          }
+        );
+
+        if (lockResult) {
+          return;
+        }
+
+        const data: RegisterInput = { ...userData };
+
+        if (!data.permissions) {
+          data.permissions = getDefaultPermissionsForRole(
+            data.role ?? APPLICATION_ROLES.CLIENT_VIEWER
+          );
+        }
+
+        const sanitizedData = { ...data };
+        if (sanitizedData.clientId === undefined) {
+          delete sanitizedData.clientId;
+        }
+
+        const createdDocs = await this.model.create([sanitizedData as never], {
+          session,
+        });
+        createdUser = createdDocs[0] as UserDocument;
+      });
+
+      return createdUser;
+    } catch (error) {
+      logger.error({ err: error }, 'Error creating initial super admin');
+      throw error;
+    } finally {
+      await session.endSession();
+    }
+  }
+
   override async create(userData: RegisterInput): Promise<UserDocument> {
     try {
       const data: RegisterInput = { ...userData };
