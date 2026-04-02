@@ -1,4 +1,8 @@
 import logger from '@config/logger.js';
+import {
+  APPLICATION_ROLES,
+  getDefaultPermissionsForRole,
+} from '@auth/validation/auth.schema.js';
 import type { RegisterInput } from '@auth/validation/auth.schema.js';
 import User, { type IUser, type UserDocument } from '@auth/models/index.js';
 
@@ -13,13 +17,10 @@ class MongoUserRepository extends BaseRepository<IUser, RegisterInput> {
     try {
       const data: RegisterInput = { ...userData };
 
-      if (data.role === 'super_admin' && !data.permissions) {
-        data.permissions = {
-          canCreateApiKeys: true,
-          canManageUsers: true,
-          canViewAnalytics: true,
-          canExportData: true,
-        };
+      if (!data.permissions) {
+        data.permissions = getDefaultPermissionsForRole(
+          data.role ?? APPLICATION_ROLES.CLIENT_VIEWER
+        );
       }
 
       const user = await super.create(data);

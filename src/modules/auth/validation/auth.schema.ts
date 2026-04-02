@@ -19,6 +19,38 @@ export const APPLICATION_ROLES = {
   CLIENT_VIEWER: 'client_viewer',
 } as const;
 
+type ApplicationRole =
+  (typeof APPLICATION_ROLES)[keyof typeof APPLICATION_ROLES];
+
+type DefaultPermissions = {
+  canCreateApiKeys: boolean;
+  canManageUsers: boolean;
+  canViewAnalytics: boolean;
+  canExportData: boolean;
+};
+
+const basePermissions = {
+  canCreateApiKeys: false,
+  canManageUsers: false,
+  canViewAnalytics: true,
+  canExportData: false,
+};
+
+export const getDefaultPermissionsForRole = (
+  role: ApplicationRole
+): DefaultPermissions => {
+  if (role === APPLICATION_ROLES.SUPER_ADMIN) {
+    return {
+      canCreateApiKeys: true,
+      canManageUsers: true,
+      canViewAnalytics: true,
+      canExportData: true,
+    };
+  }
+
+  return { ...basePermissions };
+};
+
 const roleSchema = z.enum([
   APPLICATION_ROLES.SUPER_ADMIN,
   APPLICATION_ROLES.CLIENT_ADMIN,
@@ -32,64 +64,65 @@ const permissionsSchema = z
     canViewAnalytics: z.boolean().default(true),
     canExportData: z.boolean().default(false),
   })
-  .default({
-    canCreateApiKeys: false,
-    canManageUsers: false,
-    canViewAnalytics: true,
-    canExportData: false,
-  });
+  .default(getDefaultPermissionsForRole(APPLICATION_ROLES.CLIENT_VIEWER));
 
-export const userSchema = z
-  .object({
-    username: z
-      .string({
-        error: issue =>
-          issue.input === undefined ? 'Username is required' : undefined,
-      })
-      .trim()
-      .min(3, 'Username must be at least 3 characters')
-      .max(30, 'Username must not exceed 30 characters')
-      .regex(/^[a-zA-Z0-9_.-]+$/, 'Please enter a valid username'),
+const userBaseSchema = z.object({
+  username: z
+    .string({
+      error: issue =>
+        issue.input === undefined ? 'Username is required' : undefined,
+    })
+    .trim()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must not exceed 30 characters')
+    .regex(/^[a-zA-Z0-9_.-]+$/, 'Please enter a valid username'),
 
-    email: z
-      .string({
-        error: issue =>
-          issue.input === undefined ? 'Email is required' : undefined,
-      })
-      .trim()
-      .toLowerCase()
-      .email('Please enter a valid email'),
+  email: z
+    .string({
+      error: issue =>
+        issue.input === undefined ? 'Email is required' : undefined,
+    })
+    .trim()
+    .toLowerCase()
+    .email('Please enter a valid email'),
 
-    password: passwordSchema,
+  password: passwordSchema,
 
-    role: roleSchema.default(APPLICATION_ROLES.CLIENT_VIEWER),
+  role: roleSchema.default(APPLICATION_ROLES.CLIENT_VIEWER),
 
-    clientId: z.string().trim().min(1).optional(),
+  clientId: z.string().trim().min(1).optional(),
 
-    isActive: z.boolean().default(true),
+  isActive: z.boolean().default(true),
 
-    permissions: permissionsSchema,
-  })
-  .refine(
-    data =>
-      data.role === APPLICATION_ROLES.SUPER_ADMIN || Boolean(data.clientId),
-    {
-      message: 'clientId is required unless role is super_admin',
-      path: ['clientId'],
-    }
-  );
-
-export const registerSchema = userSchema.pick({
-  username: true,
-  email: true,
-  password: true,
-  role: true,
-  clientId: true,
-  isActive: true,
-  permissions: true,
+  permissions: permissionsSchema,
 });
 
-export const loginSchema = userSchema.pick({
+const validateClientIdForRole = (data: {
+  role: (typeof APPLICATION_ROLES)[keyof typeof APPLICATION_ROLES];
+  clientId?: string | undefined;
+}) => data.role === APPLICATION_ROLES.SUPER_ADMIN || Boolean(data.clientId);
+
+export const userSchema = userBaseSchema.refine(validateClientIdForRole, {
+  message: 'clientId is required unless role is super_admin',
+  path: ['clientId'],
+});
+
+export const registerSchema = userBaseSchema
+  .pick({
+    username: true,
+    email: true,
+    password: true,
+    role: true,
+    clientId: true,
+    isActive: true,
+    permissions: true,
+  })
+  .refine(validateClientIdForRole, {
+    message: 'clientId is required unless role is super_admin',
+    path: ['clientId'],
+  });
+
+export const loginSchema = userBaseSchema.pick({
   email: true,
   password: true,
 });

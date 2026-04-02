@@ -1,5 +1,8 @@
 import type { NextFunction, Request, Response } from 'express';
-import { APPLICATION_ROLES } from '@auth/validation/auth.schema.js';
+import {
+  APPLICATION_ROLES,
+  getDefaultPermissionsForRole,
+} from '@auth/validation/auth.schema.js';
 
 import config from '@config/index.js';
 import { successResponse } from '@shared/utils/apiResponse.js';
@@ -62,12 +65,9 @@ export class AuthController {
         password,
         role: APPLICATION_ROLES.SUPER_ADMIN,
         isActive: true,
-        permissions: {
-          canCreateApiKeys: false,
-          canManageUsers: false,
-          canViewAnalytics: true,
-          canExportData: false,
-        },
+        permissions: getDefaultPermissionsForRole(
+          APPLICATION_ROLES.SUPER_ADMIN
+        ),
       };
 
       const { token, user } =
