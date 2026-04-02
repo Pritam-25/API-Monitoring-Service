@@ -1,6 +1,5 @@
 import { z } from 'zod';
 
-// Password Validation Schema
 export const passwordSchema = z
   .string({
     error: issue =>
@@ -14,36 +13,91 @@ export const passwordSchema = z
     'Password must contain at least one special character'
   );
 
-// Signup Schema
-export const signupSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(3, 'Username must be at least 3 characters')
-    .max(30, 'Username must not exceed 30 characters'),
+export const APPLICATION_ROLES = {
+  SUPER_ADMIN: 'super_admin',
+  CLIENT_ADMIN: 'client_admin',
+  CLIENT_VIEWER: 'client_viewer',
+} as const;
 
-  email: z.email({
-    error: issue =>
-      issue.input === undefined ? 'Email is required' : undefined,
-  }),
+const roleSchema = z.enum([
+  APPLICATION_ROLES.SUPER_ADMIN,
+  APPLICATION_ROLES.CLIENT_ADMIN,
+  APPLICATION_ROLES.CLIENT_VIEWER,
+]);
 
-  password: passwordSchema,
+const permissionsSchema = z
+  .object({
+    canCreateApiKeys: z.boolean().default(false),
+    canManageUsers: z.boolean().default(false),
+    canViewAnalytics: z.boolean().default(true),
+    canExportData: z.boolean().default(false),
+  })
+  .default({
+    canCreateApiKeys: false,
+    canManageUsers: false,
+    canViewAnalytics: true,
+    canExportData: false,
+  });
+
+export const userSchema = z
+  .object({
+    username: z
+      .string({
+        error: issue =>
+          issue.input === undefined ? 'Username is required' : undefined,
+      })
+      .trim()
+      .min(3, 'Username must be at least 3 characters')
+      .max(30, 'Username must not exceed 30 characters')
+      .regex(/^[a-zA-Z0-9_.-]+$/, 'Please enter a valid username'),
+
+    email: z
+      .string({
+        error: issue =>
+          issue.input === undefined ? 'Email is required' : undefined,
+      })
+      .trim()
+      .toLowerCase()
+      .email('Please enter a valid email'),
+
+    password: passwordSchema,
+
+    role: roleSchema.default(APPLICATION_ROLES.CLIENT_VIEWER),
+
+    clientId: z.string().trim().min(1).optional(),
+
+    isActive: z.boolean().default(true),
+
+    permissions: permissionsSchema,
+  })
+  .refine(
+    data =>
+      data.role === APPLICATION_ROLES.SUPER_ADMIN || Boolean(data.clientId),
+    {
+      message: 'clientId is required unless role is super_admin',
+      path: ['clientId'],
+    }
+  );
+
+export const registerSchema = userSchema.pick({
+  username: true,
+  email: true,
+  password: true,
+  role: true,
+  clientId: true,
+  isActive: true,
+  permissions: true,
 });
 
-// Login Schema
-export const loginSchema = z.object({
-  email: z.email({
-    error: issue =>
-      issue.input === undefined ? 'Email is required' : undefined,
-  }),
-
-  password: z
-    .string({
-      error: issue =>
-        issue.input === undefined ? 'Password is required' : undefined,
-    })
-    .min(6, 'Invalid Credentials'),
+export const loginSchema = userSchema.pick({
+  email: true,
+  password: true,
 });
 
-export type SignupInput = z.infer<typeof signupSchema>;
+// Backward-compatible alias for existing imports.
+export const signupSchema = registerSchema;
+
+export type UserInput = z.infer<typeof userSchema>;
+export type RegisterInput = z.infer<typeof registerSchema>;
+export type SignupInput = RegisterInput;
 export type LoginInput = z.infer<typeof loginSchema>;

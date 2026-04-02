@@ -7,23 +7,21 @@ import type {
   LoginInput,
   RegisterInput,
 } from '@auth/validation/auth.schema.js';
+import { APPLICATION_ROLES } from '@auth/validation/auth.schema.js';
 import { ApiError } from '@shared/utils/apiError.js';
 import { statusCode } from '@shared/utils/statusCodes.js';
 
-const APPLICATION_ROLES = {
-  SUPER_ADMIN: 'super_admin',
-} as const;
-
-type AuthRole = 'super_admin' | 'client_admin' | 'client_viewer';
+type ApplicationRole =
+  (typeof APPLICATION_ROLES)[keyof typeof APPLICATION_ROLES];
 
 type UserRecord = {
-  _id: string;
+  _id: { toString(): string };
   username: string;
   email: string;
   password: string;
-  role: AuthRole;
+  role: ApplicationRole;
   isActive: boolean;
-  clientId?: string;
+  clientId?: { toString(): string } | string;
   toObject?: () => Record<string, unknown>;
 };
 
@@ -57,11 +55,11 @@ export class AuthService {
     const { _id, email, username, role, clientId } = user;
 
     const payload = {
-      userId: _id,
+      userId: _id.toString(),
       username,
       email,
       role,
-      clientId,
+      clientId: clientId ? clientId.toString() : undefined,
     };
 
     const signOptions: jwt.SignOptions = {
