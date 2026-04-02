@@ -4,7 +4,10 @@ import {
   getDefaultPermissionsForRole,
 } from '@auth/validation/auth.schema.js';
 import type { RegisterInput } from '@auth/validation/auth.schema.js';
-import User, { type IUser, type UserDocument } from '@auth/models/index.js';
+import User, {
+  type IUser,
+  type UserDocument,
+} from '@modules/auth/models/user.model.js';
 
 import BaseRepository from './baseRepository.js';
 
@@ -55,9 +58,13 @@ class MongoUserRepository extends BaseRepository<IUser, RegisterInput> {
 
         const data: RegisterInput = { ...userData };
 
+        if (!data.role) {
+          data.role = APPLICATION_ROLES.SUPER_ADMIN;
+        }
+
         if (!data.permissions) {
           data.permissions = getDefaultPermissionsForRole(
-            data.role ?? APPLICATION_ROLES.CLIENT_VIEWER
+            data.role ?? APPLICATION_ROLES.SUPER_ADMIN
           );
         }
 
@@ -82,61 +89,33 @@ class MongoUserRepository extends BaseRepository<IUser, RegisterInput> {
   }
 
   override async create(userData: RegisterInput): Promise<UserDocument> {
-    try {
-      const data: RegisterInput = { ...userData };
+    const data: RegisterInput = { ...userData };
 
-      if (!data.permissions) {
-        data.permissions = getDefaultPermissionsForRole(
-          data.role ?? APPLICATION_ROLES.CLIENT_VIEWER
-        );
-      }
-
-      const user = await super.create(data);
-
-      logger.info({ username: user.username }, 'User created');
-      return user;
-    } catch (error) {
-      logger.error({ err: error }, 'Error creating user');
-      throw error;
+    if (!data.permissions) {
+      data.permissions = getDefaultPermissionsForRole(
+        data.role ?? APPLICATION_ROLES.CLIENT_VIEWER
+      );
     }
+
+    return super.create(data);
   }
 
   override async findById(userId: string): Promise<UserDocument | null> {
-    try {
-      return await super.findById(userId);
-    } catch (error) {
-      logger.error({ err: error }, 'Error finding user by id');
-      throw error;
-    }
+    return super.findById(userId);
   }
 
   override async findByUsername(
     username: string
   ): Promise<UserDocument | null> {
-    try {
-      return await this.model.findOne({ username });
-    } catch (error) {
-      logger.error({ err: error }, 'Error finding user by username');
-      throw error;
-    }
+    return this.model.findOne({ username });
   }
 
   override async findByEmail(email: string): Promise<UserDocument | null> {
-    try {
-      return await this.model.findOne({ email });
-    } catch (error) {
-      logger.error({ err: error }, 'Error finding user by email');
-      throw error;
-    }
+    return this.model.findOne({ email });
   }
 
   override async findAll(): Promise<UserDocument[]> {
-    try {
-      return await this.model.find({ isActive: true }).select('-password');
-    } catch (error) {
-      logger.error({ err: error }, 'Error finding active users');
-      throw error;
-    }
+    return this.model.find({ isActive: true }).select('-password');
   }
 }
 

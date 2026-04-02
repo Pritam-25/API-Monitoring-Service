@@ -38,7 +38,7 @@ export const validateSchema =
           method: req.method,
           errors,
         },
-        'Error occurred'
+        'Validation Failed'
       );
 
       return res

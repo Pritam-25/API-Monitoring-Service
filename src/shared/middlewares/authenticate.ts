@@ -41,7 +41,9 @@ const authenticate = (
       throw new ApiError(statusCode.unauthorized, ERROR_CODES.UNAUTHORIZED);
     }
 
-    const decoded = jwt.verify(token, config.jwt.secret) as AuthJwtPayload;
+    const decoded = jwt.verify(token, config.jwt.secret, {
+      algorithms: ['HS256'],
+    }) as AuthJwtPayload;
 
     if (!decoded.userId) {
       throw new ApiError(statusCode.unauthorized, ERROR_CODES.UNAUTHORIZED);

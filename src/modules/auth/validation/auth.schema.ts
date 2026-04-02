@@ -77,14 +77,10 @@ export const baseUserSchema = z.object({
     .max(30, 'Username must not exceed 30 characters')
     .regex(/^[a-zA-Z0-9_.-]+$/, 'Please enter a valid username'),
 
-  email: z
-    .string({
-      error: issue =>
-        issue.input === undefined ? 'Email is required' : undefined,
-    })
-    .trim()
-    .toLowerCase()
-    .email('Please enter a valid email'),
+  email: z.email({
+    error: issue =>
+      issue.input === undefined ? 'Email is required' : undefined,
+  }),
 
   password: passwordSchema,
 
@@ -122,6 +118,12 @@ export const registerSchema = baseUserSchema
     path: ['clientId'],
   });
 
+export const onboardSuperAdminSchema = baseUserSchema.pick({
+  username: true,
+  email: true,
+  password: true,
+});
+
 export const loginSchema = baseUserSchema.pick({
   email: true,
   password: true,
@@ -132,5 +134,6 @@ export const signupSchema = registerSchema;
 
 export type UserInput = z.infer<typeof userSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type OnboardSuperAdminInput = z.infer<typeof onboardSuperAdminSchema>;
 export type SignupInput = RegisterInput;
 export type LoginInput = z.infer<typeof loginSchema>;

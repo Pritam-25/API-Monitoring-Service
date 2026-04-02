@@ -89,141 +89,114 @@ export class AuthService {
   }
 
   async onboardSuperAdmin(superAdminData: RegisterInput): Promise<AuthResult> {
-    try {
-      const user = await this.userRepository.createInitialSuperAdmin({
-        ...superAdminData,
-        role: APPLICATION_ROLES.SUPER_ADMIN,
-        clientId: undefined,
-      });
+    const user = await this.userRepository.createInitialSuperAdmin({
+      ...superAdminData,
+      role: APPLICATION_ROLES.SUPER_ADMIN,
+      clientId: undefined,
+    });
 
-      if (!user) {
-        throw new ApiError(
-          statusCode.forbidden,
-          'SUPER_ADMIN_ONBOARDING_DISABLED'
-        );
-      }
-
-      const token = this.generateToken(user);
-
-      logger.info({ username: user.username }, 'Admin onboarded successfully');
-
-      return {
-        user: this.formatUserForResponse(user),
-        token,
-      };
-    } catch (error) {
-      logger.error({ err: error }, 'Error in onboarding super admin');
-      throw error;
+    if (!user) {
+      throw new ApiError(
+        statusCode.forbidden,
+        'SUPER_ADMIN_ONBOARDING_DISABLED'
+      );
     }
+
+    const token = this.generateToken(user);
+
+    logger.info({ username: user.username }, 'Admin onboarded successfully');
+
+    return {
+      user: this.formatUserForResponse(user),
+      token,
+    };
   }
 
   async register(userData: RegisterInput): Promise<AuthResult> {
-    try {
-      const existingUser = await this.userRepository.findByUsername(
-        userData.username
-      );
+    const existingUser = await this.userRepository.findByUsername(
+      userData.username
+    );
 
-      if (existingUser) {
-        throw new ApiError(statusCode.conflict, 'USERNAME_ALREADY_EXISTS');
-      }
-
-      const existingEmail = await this.userRepository.findByEmail(
-        userData.email
-      );
-
-      if (existingEmail) {
-        throw new ApiError(statusCode.conflict, 'EMAIL_ALREADY_EXISTS');
-      }
-
-      const sanitizedUserData: RegisterInput = {
-        username: userData.username,
-        email: userData.email,
-        password: userData.password,
-        role: APPLICATION_ROLES.CLIENT_VIEWER,
-        isActive: true,
-        permissions: getDefaultPermissionsForRole(
-          APPLICATION_ROLES.CLIENT_VIEWER
-        ),
-      };
-
-      const user = await this.userRepository.create(sanitizedUserData);
-      const token = this.generateToken(user);
-
-      logger.info({ username: user.username }, 'User registered successfully');
-
-      return {
-        user: this.formatUserForResponse(user),
-        token,
-      };
-    } catch (error) {
-      logger.error({ err: error }, 'Error in register service');
-      throw error;
+    if (existingUser) {
+      throw new ApiError(statusCode.conflict, 'USERNAME_ALREADY_EXISTS');
     }
+
+    const existingEmail = await this.userRepository.findByEmail(userData.email);
+
+    if (existingEmail) {
+      throw new ApiError(statusCode.conflict, 'EMAIL_ALREADY_EXISTS');
+    }
+
+    const sanitizedUserData: RegisterInput = {
+      username: userData.username,
+      email: userData.email,
+      password: userData.password,
+      role: APPLICATION_ROLES.CLIENT_VIEWER,
+      isActive: true,
+      permissions: getDefaultPermissionsForRole(
+        APPLICATION_ROLES.CLIENT_VIEWER
+      ),
+    };
+
+    const user = await this.userRepository.create(sanitizedUserData);
+    const token = this.generateToken(user);
+
+    logger.info({ username: user.username }, 'User registered successfully');
+
+    return {
+      user: this.formatUserForResponse(user),
+      token,
+    };
   }
 
   async login(payload: LoginInput): Promise<AuthResult> {
-    try {
-      const user = await this.userRepository.findByEmail(payload.email);
+    const user = await this.userRepository.findByEmail(payload.email);
 
-      if (!user) {
-        throw new ApiError(statusCode.unauthorized, 'INVALID_CREDENTIALS');
-      }
-
-      if (!user.isActive) {
-        throw new ApiError(statusCode.forbidden, 'ACCOUNT_DEACTIVATED');
-      }
-
-      const isPasswordValid = await this.comparePassword(
-        payload.password,
-        user.password
-      );
-
-      if (!isPasswordValid) {
-        throw new ApiError(statusCode.unauthorized, 'INVALID_CREDENTIALS');
-      }
-
-      const token = this.generateToken(user);
-
-      logger.info({ username: user.username }, 'User logged in successfully');
-
-      return {
-        user: this.formatUserForResponse(user),
-        token,
-      };
-    } catch (error) {
-      logger.error({ err: error }, 'Error in login service');
-      throw error;
+    if (!user) {
+      throw new ApiError(statusCode.unauthorized, 'INVALID_CREDENTIALS');
     }
+
+    if (!user.isActive) {
+      throw new ApiError(statusCode.forbidden, 'ACCOUNT_DEACTIVATED');
+    }
+
+    const isPasswordValid = await this.comparePassword(
+      payload.password,
+      user.password
+    );
+
+    if (!isPasswordValid) {
+      throw new ApiError(statusCode.unauthorized, 'INVALID_CREDENTIALS');
+    }
+
+    const token = this.generateToken(user);
+
+    logger.info({ username: user.username }, 'User logged in successfully');
+
+    return {
+      user: this.formatUserForResponse(user),
+      token,
+    };
   }
 
   async getProfile(userId: string): Promise<AuthenticatedUser> {
-    try {
-      const user = await this.userRepository.findById(userId);
+    const user = await this.userRepository.findById(userId);
 
-      if (!user) {
-        throw new ApiError(statusCode.notFound, 'USER_NOT_FOUND');
-      }
-
-      return this.formatUserForResponse(user);
-    } catch (error) {
-      logger.error({ err: error }, 'Error getting user profile');
-      throw error;
+    if (!user) {
+      throw new ApiError(statusCode.notFound, 'USER_NOT_FOUND');
     }
+
+    return this.formatUserForResponse(user);
   }
 
   async checkSuperAdminPermissions(userId: string): Promise<boolean> {
-    try {
-      const user = await this.userRepository.findById(userId);
+    const user = await this.userRepository.findById(userId);
 
-      if (!user) {
-        throw new ApiError(statusCode.notFound, 'USER_NOT_FOUND');
-      }
-
-      return user.role === APPLICATION_ROLES.SUPER_ADMIN;
-    } catch (error) {
-      logger.error({ err: error }, 'Error checking super admin permissions');
-      throw error;
+    if (!user) {
+      throw new ApiError(statusCode.notFound, 'USER_NOT_FOUND');
     }
+
+    return user.role === APPLICATION_ROLES.SUPER_ADMIN;
   }
 }
 

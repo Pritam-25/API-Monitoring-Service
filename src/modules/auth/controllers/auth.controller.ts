@@ -1,4 +1,4 @@
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import {
   APPLICATION_ROLES,
   getDefaultPermissionsForRole,
@@ -9,6 +9,7 @@ import { successResponse } from '@shared/utils/apiResponse.js';
 import { statusCode } from '@shared/utils/statusCodes.js';
 import type {
   LoginInput,
+  OnboardSuperAdminInput,
   RegisterInput,
 } from '@auth/validation/auth.schema.js';
 
@@ -45,120 +46,78 @@ export class AuthController {
     });
   }
 
-  onboardSuperAdmin = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const { username, email, password } = req.body as RegisterInput;
+  onboardSuperAdmin = async (req: Request, res: Response): Promise<void> => {
+    const { username, email, password } = req.body as OnboardSuperAdminInput;
 
-      const superAdminData: RegisterInput = {
-        username,
-        email,
-        password,
-        role: APPLICATION_ROLES.SUPER_ADMIN,
-        isActive: true,
-        permissions: getDefaultPermissionsForRole(
-          APPLICATION_ROLES.SUPER_ADMIN
-        ),
-      };
+    const superAdminData: RegisterInput = {
+      username,
+      email,
+      password,
+      role: APPLICATION_ROLES.SUPER_ADMIN,
+      isActive: true,
+      permissions: getDefaultPermissionsForRole(APPLICATION_ROLES.SUPER_ADMIN),
+    };
 
-      const { token, user } =
-        await this.authService.onboardSuperAdmin(superAdminData);
+    const { token, user } =
+      await this.authService.onboardSuperAdmin(superAdminData);
 
-      this.attachAuthCookie(res, token);
+    this.attachAuthCookie(res, token);
 
-      res
-        .status(statusCode.created)
-        .json(successResponse('Super admin created successfully', user));
-    } catch (error) {
-      next(error);
-    }
+    res
+      .status(statusCode.created)
+      .json(successResponse('Super admin created successfully', user));
   };
 
-  register = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const payload = req.body as RegisterInput;
+  register = async (req: Request, res: Response): Promise<void> => {
+    const payload = req.body as RegisterInput;
 
-      const userData: RegisterInput = {
-        ...payload,
-        role: payload.role ?? APPLICATION_ROLES.CLIENT_VIEWER,
-      };
+    const userData: RegisterInput = {
+      ...payload,
+      role: payload.role ?? APPLICATION_ROLES.CLIENT_VIEWER,
+    };
 
-      const { token, user } = await this.authService.register(userData);
+    const { token, user } = await this.authService.register(userData);
 
-      this.attachAuthCookie(res, token);
+    this.attachAuthCookie(res, token);
 
-      res
-        .status(statusCode.created)
-        .json(successResponse('User created successfully', user));
-    } catch (error) {
-      next(error);
-    }
+    res
+      .status(statusCode.created)
+      .json(successResponse('User created successfully', user));
   };
 
-  login = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const payload = req.body as LoginInput;
-      const { user, token } = await this.authService.login(payload);
+  login = async (req: Request, res: Response): Promise<void> => {
+    const payload = req.body as LoginInput;
+    const { user, token } = await this.authService.login(payload);
 
-      this.attachAuthCookie(res, token);
+    this.attachAuthCookie(res, token);
 
-      res
-        .status(statusCode.success)
-        .json(successResponse('User logged in successfully', user));
-    } catch (error) {
-      next(error);
-    }
+    res
+      .status(statusCode.success)
+      .json(successResponse('User logged in successfully', user));
   };
 
-  getProfile = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      const userId = req.user?.userId;
+  getProfile = async (req: Request, res: Response): Promise<void> => {
+    const userId = req.user?.userId;
 
-      if (!userId) {
-        throw new Error('User not authenticated');
-      }
-
-      const result = await this.authService.getProfile(userId);
-
-      res
-        .status(statusCode.success)
-        .json(successResponse('Profile fetched successfully', result));
-    } catch (error) {
-      next(error);
+    if (!userId) {
+      throw new Error('User not authenticated');
     }
+
+    const result = await this.authService.getProfile(userId);
+
+    res
+      .status(statusCode.success)
+      .json(successResponse('Profile fetched successfully', result));
   };
 
-  logout = async (
-    _req: Request,
-    res: Response,
-    next: NextFunction
-  ): Promise<void> => {
-    try {
-      res.clearCookie('authToken', {
-        httpOnly: config.cookie.httpOnly,
-        secure: config.cookie.secure,
-      });
-      res
-        .status(statusCode.success)
-        .json(successResponse('Logout successful', {}));
-    } catch (error) {
-      next(error);
-    }
+  logout = async (_req: Request, res: Response): Promise<void> => {
+    res.clearCookie('authToken', {
+      httpOnly: config.cookie.httpOnly,
+      secure: config.cookie.secure,
+    });
+    res
+      .status(statusCode.success)
+      .json(successResponse('Logout successful', {}));
   };
 }
 
