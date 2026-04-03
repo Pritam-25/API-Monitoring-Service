@@ -5,7 +5,9 @@ import {
 } from '@auth/validation/auth.schema.js';
 
 import config from '@config/index.js';
+import { ApiError } from '@shared/utils/apiError.js';
 import { successResponse } from '@shared/utils/apiResponse.js';
+import { ERROR_CODES } from '@shared/utils/errorCodes.js';
 import { statusCode } from '@shared/utils/statusCodes.js';
 import type {
   LoginInput,
@@ -100,7 +102,7 @@ export class AuthController {
     const userId = req.user?.userId;
 
     if (!userId) {
-      throw new Error('User not authenticated');
+      throw new ApiError(statusCode.unauthorized, ERROR_CODES.UNAUTHORIZED);
     }
 
     const result = await this.authService.getProfile(userId);

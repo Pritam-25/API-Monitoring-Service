@@ -7,13 +7,10 @@ import {
 } from '@auth/validation/auth.schema.js';
 import { asyncHandler } from '@shared/utils/asyncHandler.js';
 import authenticate from '@shared/middlewares/authenticate.js';
-import { AuthController } from '@auth/controllers/auth.controller.js';
-import { AuthService } from '@auth/services/auth.service.js';
-import authRepository from '@modules/auth/repositories/auth.repository.js';
+import authContainer from '@modules/auth/container/auth.container.js';
 
 const router: Router = Router();
-const authService = new AuthService(authRepository);
-const authController = new AuthController(authService);
+const { authController } = authContainer.controllers;
 
 router.post(
   '/login',
