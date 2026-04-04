@@ -9,9 +9,9 @@ import requestIdMiddleware from '@shared/middlewares/requestId.js';
 import requestLoggerMiddleware from '@shared/middlewares/requestLogger.js';
 
 // Routers
-import authRouter from '@modules/auth/routes/auth.routes.js';
-import clientRouter from '@modules/client/routes/client.routes.js';
-import ingestRouter from '@modules/ingest/routes/ingest.routes.js';
+import authRouter from '@modules/auth/routes/auth.route.js';
+import clientRouter from '@modules/client/routes/client.route.js';
+import ingestRouter from '@modules/ingest/routes/ingest.route.js';
 import { ERROR_CODES } from '@shared/utils/errorCodes.js';
 import { statusCode } from '@shared/utils/statusCodes.js';
 

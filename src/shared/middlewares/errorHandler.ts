@@ -26,7 +26,7 @@ export const errorHandler = (
       path: sanitizedPath,
       method: req.method,
     },
-    'Error occurred'
+    err.message || 'Unhandled error'
   );
 
   if (err instanceof ApiError) {
